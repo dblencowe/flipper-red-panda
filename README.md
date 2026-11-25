@@ -101,3 +101,7 @@ Source checked: official `1.5.1`, Unleashed `unlshd-095`, Momentum `e1784e7` (`m
 - Every `.bm` decodes back to its PNG pixel for pixel and is within the firmware's size limit.
 - Each `meta.txt` follows the loader's rules: fields in strict order, the frame order count equal to passive plus active frames, and bubble slots starting at 0 and ascending.
 - Checked on a Flipper Zero running Unleashed `unlshd-095`, installed to `SD/dolphin`, on 2026-11-25.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). That covers the artwork, the compiled packs and the tools. Use, change, share or sell them freely; just keep the copyright notice with any copies.
