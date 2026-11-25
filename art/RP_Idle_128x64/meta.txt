@@ -1,0 +1,50 @@
+Filetype: Flipper Animation
+Version: 1
+
+Width: 128
+Height: 64
+Passive frames: 8
+Active frames: 4
+Frames order: 0 0 0 1 0 0 2 2 3 4 3 4
+Active cycles: 2
+Frame rate: 2
+Duration: 360
+Active cooldown: 5
+
+Bubble slots: 2
+
+Slot: 0
+X: 2
+Y: 22
+Text: Hi! I'm a\nred panda!
+AlignH: Right
+AlignV: Center
+StartFrame: 9
+EndFrame: 15
+
+Slot: 1
+X: 2
+Y: 22
+Text: Not a\nraccoon.
+AlignH: Right
+AlignV: Center
+StartFrame: 9
+EndFrame: 11
+
+Slot: 1
+X: 2
+Y: 22
+Text: Not a fox.
+AlignH: Right
+AlignV: Center
+StartFrame: 12
+EndFrame: 13
+
+Slot: 1
+X: 2
+Y: 22
+Text: Red panda!
+AlignH: Right
+AlignV: Center
+StartFrame: 14
+EndFrame: 15

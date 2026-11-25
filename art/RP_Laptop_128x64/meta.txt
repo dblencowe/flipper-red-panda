@@ -1,0 +1,32 @@
+Filetype: Flipper Animation
+Version: 1
+
+Width: 128
+Height: 64
+Passive frames: 4
+Active frames: 4
+Frames order: 0 1 0 1 2 3 2 4
+Active cycles: 2
+Frame rate: 2
+Duration: 360
+Active cooldown: 7
+
+Bubble slots: 1
+
+Slot: 0
+X: 2
+Y: 22
+Text: Hacking the\nbamboo grid
+AlignH: Right
+AlignV: Center
+StartFrame: 4
+EndFrame: 7
+
+Slot: 0
+X: 2
+Y: 22
+Text: Access\ngranted!
+AlignH: Right
+AlignV: Center
+StartFrame: 8
+EndFrame: 11
