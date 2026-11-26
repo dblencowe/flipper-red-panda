@@ -7,7 +7,9 @@ Outputs:
   dist/sd-dolphin/dolphin/       official, Unleashed, and Momentum with Asset
                                  Pack set to Default. Copy to SD/dolphin.
   dist/momentum-asset-pack/RedPanda/
-                                 Momentum asset pack. Copy to SD/asset_packs.
+                                 Momentum asset pack (animations and the
+                                 pictures Momentum lets packs swap). Copy to
+                                 SD/asset_packs.
 
 Frames are converted the same way as official firmware's
 scripts/flipper/assets/icon.py file2image (checked against 1.5.1, and
@@ -87,6 +89,41 @@ def write_tree(out):
     return frames
 
 
+# Momentum looks pictures up as Icons/<Category>/<name>.bmx. Its passport has
+# one picture per mood rather than three levels, so it gets level 1.
+MOMENTUM_ICONS = {
+    "Settings/dolph_cry_49x54": "assets/icons/Settings/dolph_cry_49x54.png",
+    "Dolphin/WarningDolphin_45x42": "assets/icons/Dolphin/WarningDolphin_45x42.png",
+    "Dolphin/WarningDolphinFlip_45x42": "assets/icons/Dolphin/WarningDolphinFlip_45x42.png",
+    "Dolphin/DolphinMafia_119x62": "assets/icons/Dolphin/DolphinMafia_119x62.png",
+    "Passport/passport_happy_46x49": "assets/icons/Passport/passport_happy1_46x49.png",
+    "Passport/passport_okay_46x49": "assets/icons/Passport/passport_okay1_46x49.png",
+    "Passport/passport_bad_46x49": "assets/icons/Passport/passport_bad1_46x49.png",
+}
+
+
+def png_to_bmx(path):
+    """Momentum's static icon file: int32 width, int32 height, then the .bm."""
+    with Image.open(path) as im:
+        w, h = im.size
+    return w.to_bytes(4, "little") + h.to_bytes(4, "little") + png_to_bm(path)
+
+
+def write_momentum_icons(out):
+    if out.exists():
+        shutil.rmtree(out)
+    for name, src in MOMENTUM_ICONS.items():
+        png = ART / "firmware" / src
+        dst = out / (name + ".bmx")
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(png_to_bmx(png))
+        bm = dst.with_suffix(".check.bm")  # verify the payload after the header
+        bm.write_bytes(dst.read_bytes()[8:])
+        check_bm(bm, png)
+        bm.unlink()
+    return len(MOMENTUM_ICONS)
+
+
 def main():
     targets = {
         "official / Unleashed (SD/dolphin)": DIST / "sd-dolphin" / "dolphin",
@@ -97,6 +134,9 @@ def main():
         n = write_tree(out)
         print(f"{label}: {n} frames in {len(anim_names())} animations -> "
               f"{out.relative_to(ROOT)}")
+    out = DIST / "momentum-asset-pack" / "RedPanda" / "Icons"
+    n = write_momentum_icons(out)
+    print(f"Momentum asset pack icons: {n} pictures -> {out.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

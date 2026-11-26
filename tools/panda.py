@@ -57,12 +57,28 @@ def _patch(rows, row, col, text):
     rows[row] = r[:col] + text + r[col + len(text):]
 
 
-def head(eyes="open", mouth="closed", ear=None):
+BROWS = {  # rows 9..10, cols 6..13 of the left half, drawn over the white brow
+    "angry": ["ww###www", "wwww####"],  # inner end low, runs into the eye
+    "sad":   ["wwww###w", "w###wwww"],  # inner end high
+}
+
+
+def head(eyes="open", mouth="closed", ear=None, brow=None):
     left = list(HEAD_LEFT)
     for i, text in enumerate(EYES[eyes]):
         _patch(left, 11 + i, 6, text)
+    if brow:  # only the ink pixels of the brow pattern are laid over the face
+        for i, text in enumerate(BROWS[brow]):
+            r = list(left[9 + i])
+            for j, ch in enumerate(text):
+                if ch == "#":
+                    r[6 + j] = "#"
+            left[9 + i] = "".join(r)
     rows = [r + r[:CX][::-1] for r in left]
-    if mouth == "open":
+    if mouth == "frown":
+        _patch(rows, 20, 14, "w#####w")
+        _patch(rows, 21, 14, "#wwwww#")
+    elif mouth == "open":
         _patch(rows, 20, 15, "#####")
         _patch(rows, 21, 15, "#####")
         _patch(rows, 22, 16, "###")
