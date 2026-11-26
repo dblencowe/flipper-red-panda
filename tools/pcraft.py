@@ -121,14 +121,20 @@ def _requests(canvas, out_rel):
     def cmd(name, params):
         req.append(("engine.execute", {"command": name, "params": params}))
 
+    W, H = canvas.width, canvas.height
     for op in canvas.ops:
         kind = op[0]
         if kind in ("rect", "ell"):
             _, x, y, w, h, c = op
+            if x >= W or y >= H or x + w <= 0 or y + h <= 0:
+                continue  # wholly off the canvas: nothing to select
             cmd("select.rect", {"x": x, "y": y, "width": w, "height": h,
                                 "ellipse": kind == "ell", "antiAlias": False})
         else:
             _, pts, c = op
+            pts = [(x, y) for x, y in pts if 0 <= x < W and 0 <= y < H]
+            if not pts:
+                continue
             first = True
             for x, y, w in _runs(pts):
                 cmd("select.rect", {"x": x, "y": y, "width": w, "height": 1,

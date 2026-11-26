@@ -13,6 +13,7 @@ import shutil
 from PIL import Image
 
 import panda
+import scenes2
 from pcraft import Canvas, render
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -274,6 +275,10 @@ for _mood in ("happy", "okay", "bad"):
 for _n in range(len(TV_FRAMES)):
     JOBS[f"assets/dolphin/internal/L1_Tv_128x47/frame_{_n}.png"] = lambda n=_n: tv(n)
 
+PHASE1 = list(JOBS)
+JOBS.update(scenes2.STATIC)
+JOBS.update(scenes2.ANIMATED)
+
 MIRRORED = {  # upstream ships these as left-right mirrors of another picture
     "assets/icons/Dolphin/WarningDolphinFlip_45x42.png":
         "assets/icons/Dolphin/WarningDolphin_45x42.png",
@@ -301,22 +306,41 @@ def contact_sheet(paths, out, scale=4, width=1100, pad=8):
     sheet.save(out)
 
 
-def tv_gif(out, scale=3, fps=2):
-    """Play the TV frames as the firmware does: 6 passive, then 6 7 twice."""
-    folder = OUT / "assets/dolphin/internal/L1_Tv_128x47"
+def anim_gif(folder, names, order, out, scale=3, fps=2):
+    """Play animation frames in the firmware's order, coloured like the LCD."""
     tiles = []
-    for n in range(len(TV_FRAMES)):
-        im = Image.open(folder / f"frame_{n}.png").convert("1")
+    for name in names:
+        im = Image.open(folder / name).convert("1")
         big = im.resize((im.size[0] * scale, im.size[1] * scale), Image.NEAREST)
         tile = Image.new("RGB", big.size, LCD)
         tile.paste(INK, mask=Image.eval(big.convert("L"), lambda v: 255 - v))
         tiles.append(tile.convert("P", palette=Image.ADAPTIVE, colors=4))
-    seq = [tiles[i] for i in (0, 1, 2, 3, 4, 5, 6, 7, 6, 7)]
+    seq = [tiles[i] for i in order]
     seq[0].save(out, save_all=True, append_images=seq[1:],
                 duration=int(1000 / fps), loop=0)
 
 
-def main():
+GIFS = {  # folder: (frame names, play order)
+    "assets/dolphin/internal/L1_Tv_128x47":
+        ([f"frame_{n}.png" for n in range(8)], (0, 1, 2, 3, 4, 5, 6, 7, 6, 7)),
+    "assets/dolphin/internal/L1_NoSd_128x49":
+        ([f"frame_{n}.png" for n in range(6)], (0, 1, 0, 1, 0, 2, 3, 4, 3, 5)),
+    "assets/icons/Animations/Levelup1_128x64":
+        ([f"frame_{n:02d}.png" for n in range(11)], tuple(range(11)) + (8, 9, 10) * 2),
+    "assets/icons/Animations/Levelup2_128x64":
+        ([f"frame_{n:02d}.png" for n in range(11)], tuple(range(11)) + (8, 9, 10) * 2),
+}
+
+
+def main(only=None):
+    """Render everything, or with an argument only the jobs whose path
+    contains it (written in place, preview in preview/_wip.png)."""
+    if only:
+        picked = {k: v for k, v in JOBS.items() if only in k}
+        render([(str(pathlib.Path("art/firmware") / k), fn()) for k, fn in picked.items()], ROOT)
+        contact_sheet([OUT / k for k in picked], PREVIEW / "_wip.png", width=1600)
+        print(f"{len(picked)} pictures -> preview/_wip.png")
+        return
     if OUT.exists():
         shutil.rmtree(OUT)
     jobs = [(str(pathlib.Path("art/firmware") / rel), fn()) for rel, fn in JOBS.items()]
@@ -326,13 +350,16 @@ def main():
     # Keep the TV animation's upstream meta.txt next to its frames.
     meta = ROOT / "tools" / "L1_Tv_128x47.meta.txt"
     shutil.copyfile(meta, OUT / "assets/dolphin/internal/L1_Tv_128x47/meta.txt")
-    order = list(JOBS) + list(MIRRORED)
-    order.sort(key=lambda p: ("L1_Tv" in p, p))
     PREVIEW.mkdir(exist_ok=True)
-    contact_sheet([OUT / p for p in order], PREVIEW / "firmware.png")
-    tv_gif(PREVIEW / "L1_Tv_128x47.gif")
-    print(f"{len(order)} pictures in {OUT.relative_to(ROOT)}")
+    phase1 = PHASE1 + list(MIRRORED)
+    phase1.sort(key=lambda p: ("L1_Tv" in p, p))
+    contact_sheet([OUT / p for p in phase1], PREVIEW / "firmware.png")
+    contact_sheet([OUT / p for p in scenes2.STATIC], PREVIEW / "firmware2.png", width=1600)
+    for folder, (names, order) in GIFS.items():
+        anim_gif(OUT / folder, names, order, PREVIEW / (pathlib.Path(folder).name + ".gif"))
+    print(f"{len(JOBS) + len(MIRRORED)} pictures in {OUT.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(sys.argv[1] if len(sys.argv) > 1 else None)

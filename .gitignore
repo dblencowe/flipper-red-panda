@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 # Local copies pulled off a device; not part of the pack
 backup/
+preview/_wip.png

@@ -2,11 +2,16 @@
 
     python tools\\firmware.py <path to an official or Unleashed checkout>
 
-Copies art/firmware/** over the matching dolphin pictures (each must exist
-in the tree with the same size), and makes the red panda animations the
-firmware's SD resources: art/RP_* go to assets/dolphin/external/ and
+Copies art/firmware/** over the matching dolphin pictures, and makes the
+red panda animations the firmware's SD resources: art/RP_* go to
+assets/dolphin/external/ and
 art/manifest.txt replaces its manifest, so an update installs the pandas to
 SD/dolphin itself. Stock animation folders stay in the tree, unlisted.
+
+Official and Unleashed differ by a picture or two (official has
+Scanning_short_96x52, Unleashed has Fishing and Scanning at 123x52), so a
+picture the tree doesn't have is skipped and listed. A picture whose size
+differs stops the script before anything is copied.
 
 Use --icons-only to leave the SD resources alone. Momentum is not supported
 here: its pictures differ, and its asset packs swap them without a build
@@ -40,22 +45,24 @@ def main():
                  "(no assets/icons/Passport/passport_happy1_46x49.png). For "
                  "Momentum, use the asset pack instead.")
 
-    problems, copied = [], 0
+    problems, skipped, todo = [], [], []
     for src in sorted(PICTURES.rglob("*.png")):
         rel = src.relative_to(PICTURES)
         dst = tree / rel
         if not dst.exists():
-            problems.append(f"missing in tree: {rel.as_posix()}")
+            skipped.append(rel.as_posix())
             continue
+        todo.append(src)
         with Image.open(src) as a, Image.open(dst) as b:
             if a.size != b.size:
                 problems.append(f"size differs: {rel.as_posix()} {a.size} vs {b.size}")
     if problems:
         sys.exit("Nothing copied:\n  " + "\n  ".join(problems))
-    for src in sorted(PICTURES.rglob("*.png")):
+    for src in todo:
         shutil.copyfile(src, tree / src.relative_to(PICTURES))
-        copied += 1
-    print(f"pictures: {copied} replaced")
+    print(f"pictures: {len(todo)} replaced")
+    for rel in skipped:
+        print(f"  not in this firmware, skipped: {rel}")
 
     if args.icons_only:
         return

@@ -89,16 +89,33 @@ def write_tree(out):
     return frames
 
 
-# Momentum looks pictures up as Icons/<Category>/<name>.bmx. Its passport has
-# one picture per mood rather than three levels, so it gets level 1.
-MOMENTUM_ICONS = {
-    "Settings/dolph_cry_49x54": "assets/icons/Settings/dolph_cry_49x54.png",
-    "Dolphin/WarningDolphin_45x42": "assets/icons/Dolphin/WarningDolphin_45x42.png",
-    "Dolphin/WarningDolphinFlip_45x42": "assets/icons/Dolphin/WarningDolphinFlip_45x42.png",
-    "Dolphin/DolphinMafia_119x62": "assets/icons/Dolphin/DolphinMafia_119x62.png",
-    "Passport/passport_happy_46x49": "assets/icons/Passport/passport_happy1_46x49.png",
-    "Passport/passport_okay_46x49": "assets/icons/Passport/passport_okay1_46x49.png",
-    "Passport/passport_bad_46x49": "assets/icons/Passport/passport_bad1_46x49.png",
+# Momentum looks pictures up as Icons/<Category>/<name>.bmx. It has every
+# firmware picture we draw at the same path and size, except the passport
+# (one picture per mood rather than three levels, so it gets level 1) and the
+# level-up animation (one, Levelup_128x64, which gets our level 2 one).
+# Internal animations such as L1_Tv and L1_NoSd can't be swapped by a pack.
+NOT_IN_MOMENTUM = {"SubGhz/Scanning_short_96x52.png"}  # official only
+
+
+def momentum_icons():
+    icons = {}
+    root = ART / "firmware" / "assets" / "icons"
+    for png in sorted(root.rglob("*.png")):
+        rel = png.relative_to(root)
+        if png.name.startswith("frame_") or rel.parts[0] == "Passport":
+            continue
+        if rel.as_posix() in NOT_IN_MOMENTUM:
+            continue
+        icons[rel.with_suffix("").as_posix()] = png.relative_to(ART / "firmware").as_posix()
+    for mood in ("happy", "okay", "bad"):
+        icons[f"Passport/passport_{mood}_46x49"] = (
+            f"assets/icons/Passport/passport_{mood}1_46x49.png")
+    return icons
+
+
+MOMENTUM_ICONS = momentum_icons()
+MOMENTUM_ANIMATED = {  # Icons/<name>/: (our frames folder, frame rate)
+    "Animations/Levelup_128x64": ("assets/icons/Animations/Levelup1_128x64", 2),
 }
 
 
@@ -121,7 +138,19 @@ def write_momentum_icons(out):
         bm.write_bytes(dst.read_bytes()[8:])
         check_bm(bm, png)
         bm.unlink()
-    return len(MOMENTUM_ICONS)
+    for name, (folder, rate) in MOMENTUM_ANIMATED.items():
+        frames = sorted((ART / "firmware" / folder).glob("frame_*.png"))
+        dst = out / name
+        dst.mkdir(parents=True, exist_ok=True)
+        for i, png in enumerate(frames):
+            bm = dst / f"frame_{i:02d}.bm"
+            bm.write_bytes(png_to_bm(png))
+            check_bm(bm, png)
+        with Image.open(frames[0]) as im:
+            w, h = im.size
+        (dst / "meta").write_bytes(b"".join(
+            v.to_bytes(4, "little") for v in (w, h, rate, len(frames))))
+    return len(MOMENTUM_ICONS) + len(MOMENTUM_ANIMATED)
 
 
 def main():
