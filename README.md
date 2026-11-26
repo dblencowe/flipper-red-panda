@@ -182,6 +182,8 @@ Source checked: official `1.5.1`, Unleashed `unlshd-095`, Momentum `e1784e7` (`m
 - Each `meta.txt` follows the loader's rules: fields in strict order, the frame order count equal to passive plus active frames, and bubble slots starting at 0 and ascending.
 - Momentum swaps icons from `asset_packs/<pack>/Icons/<Category>/<name>.bmx` (`lib/momentum/asset_packs.c`); the pack uses those names.
 - Idle animations checked on a Flipper Zero running Unleashed `unlshd-095`, installed to `SD/dolphin`, on 2026-11-25.
+- Firmware pictures checked on a Flipper Zero running a custom Unleashed `unlshd-095` build made with `tools/firmware.py`, on 2026-11-26: power-off, passport, lock-screen warning, Deleted screen, the TV animation, and the idle animations installed by the update itself.
+- The Momentum asset pack's pictures and an official firmware build are checked against source, not yet on a device.
 
 ## Licence
 
